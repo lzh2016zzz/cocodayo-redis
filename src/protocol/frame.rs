@@ -48,31 +48,33 @@ impl Frame {
     pub fn into_bytes(self) -> Result<BytesMut, ParseError> {
         return match self {
             Frame::Str(str) => {
-                let mut buf: BytesMut = BytesMut::new();
+                let capacity = str.len() + 10;
+                let mut buf: BytesMut = BytesMut::with_capacity(capacity);
                 buf.put_u8(b'+');
-                buf.put_slice(&str.into_bytes()[..]);
+                buf.put_slice(&str.into_bytes());
                 buf.put_slice(NC);
                 Ok(buf)
             }
             Frame::Error(str) => {
                 let mut buf: BytesMut = BytesMut::new();
                 buf.put_u8(b'-');
-                buf.put_slice(&str.into_bytes()[..]);
+                buf.put_slice(&str.into_bytes());
                 buf.put_slice(NC);
                 Ok(buf)
             }
             Frame::Integer(i) => {
                 let mut buf: BytesMut = BytesMut::new();
                 buf.put_u8(b':');
-                buf.put_slice(&i_to_string(i as usize).into_bytes()[..]);
+                buf.put_slice(&i_to_string(i as usize).into_bytes());
                 buf.put_slice(NC);
                 Ok(buf)
             }
             Frame::Bulk(s) => {
-                let mut buf: BytesMut = BytesMut::new();
                 let slice = &s[..];
+                let s = &i_to_string(slice.len() as usize).into_bytes();
+                let mut buf: BytesMut = BytesMut::with_capacity(s.len() + 10);
                 buf.put_u8(b'$');
-                buf.put_slice(&i_to_string(slice.len() as usize).into_bytes()[..]);
+                buf.put_slice(s);
                 buf.put_slice(NC);
                 buf.put_slice(slice);
                 buf.put_slice(NC);
@@ -223,6 +225,21 @@ impl From<usize> for Frame {
         }else {
             Frame::Error("numeric out of range".into())
         }
+    }
+}
+
+impl From<Vec<u8>> for Frame {
+    fn from(src: Vec<u8>) -> Self {
+        match String::from_utf8(src) {
+            Ok(s) => Frame::Str(s),
+            Err(e) => return Frame::Str("".into()),
+        }
+    }
+}
+
+impl From<Vec<Frame>> for Frame {
+    fn from(src: Vec<Frame>) -> Self {
+        Frame::Array(src)
     }
 }
 

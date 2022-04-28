@@ -3,6 +3,7 @@ use crate::command::set::Set;
 use crate::command::select::Select;
 use crate::command::info::Info;
 use crate::command::del::Del;
+use crate::command::mget::MGet;
 use crate::command::exists::Exists;
 use crate::command::flushdb::Flushdb;
 use crate::protocol::frame::Frame;
@@ -23,6 +24,7 @@ pub mod exists;
 pub mod ttl;
 pub mod flushdb;
 pub mod incrby;
+pub mod mget;
 
 
 #[derive(Debug)]
@@ -38,6 +40,7 @@ pub enum Command {
     TTL(Ttl),
     PTTL(Ttl),
     SELECT(Select),
+    MGET(MGet),
     UNKNOWN(String,Parse)
 }
 
@@ -57,6 +60,7 @@ impl Command {
             Command::TTL(ttl) | Command::PTTL(ttl) => ttl.apply(shared),
             Command::FLUSHDB(flushdb) => flushdb.apply(shared),
             Command::INCR(incrby) => incrby.apply(shared),
+            Command::MGET(mget) => mget.apply(shared),
         };
 
         return match result{

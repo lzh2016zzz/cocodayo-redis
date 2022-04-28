@@ -1,5 +1,5 @@
 
-use crate::protocol::{frame::{self, Frame}, parse::Parse, ParseError};
+use crate::protocol::{frame::{self}, parse::Parse, ParseError};
 
 use super::Execable;
 

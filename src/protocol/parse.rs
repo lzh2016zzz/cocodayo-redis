@@ -8,8 +8,10 @@ use crate::command::select::Select;
 use crate::command::set::Set;
 use crate::command::ttl::Ttl;
 use crate::command::Command;
-use crate::protocol::frame::Frame;
+use crate::command::mget::MGet;
 
+
+use crate::protocol::frame::Frame;
 use crate::protocol::ParseError;
 use alloc::vec::IntoIter;
 
@@ -44,6 +46,7 @@ impl Parse {
             "incr" =>Command::INCR(IncrBy::parse(self,true)?),
             "incrby" =>Command::INCR(IncrBy::parse(self,false)?),
             "flushdb" => Command::FLUSHDB(Flushdb::parse(self)?),
+            "mget" => Command::MGET(MGet::parse(self)?),
             _ => Command::UNKNOWN(command_name, self),
         };
         Ok(cmd)

@@ -17,7 +17,9 @@ impl Flushdb {
 
 impl Execable for Flushdb {
     fn apply(self, shared: &mut Shared) -> crate::Result<Option<Frame>> {
-        shared.flush();
-        Ok(Some("OK".into()))
+        match shared.flush() {
+            Ok(_) => Ok(Some("OK".into())),
+            Err(err) => Ok(Some(Frame::Error(format!("{}",err)))),
+        }
     }
 }

@@ -104,7 +104,7 @@ pub async fn run(tcp_listener: TcpListener, props:ServerProperties,shutdown: imp
     tokio::select! {
         res = server.run() => {
             if let Err(err) = res {
-                log::error!("failed to accept {}",err);
+                log::error!("failed to accept connection {}",err);
             }
         }
         worker = db_worker.run() => {

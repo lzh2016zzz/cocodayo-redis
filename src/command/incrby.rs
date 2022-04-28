@@ -33,11 +33,15 @@ impl Execable for IncrBy {
 
         let optref = shared.get(&key);
         let value = match optref {
-            Some(mut r) => r.incr(num)?,
+            Some(mut r) => {
+                let increment =  r.incr(num)?;
+                shared.set_default(&key, r)?;
+                increment
+            },
             None => {
-                let value_ref = ValueRef::Bytes("0".into());
-                let _ = shared.set(&key, value_ref,false, false).unwrap();
-                shared.get_mut(&key).unwrap().incr(num)?
+                let value_ref = ValueRef::Mut("1".into());
+                shared.set_default(&key, value_ref)?;
+                1
             }
         };
         return Ok(Some(Frame::Integer(value)));

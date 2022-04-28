@@ -1,6 +1,8 @@
 use std::net::{SocketAddr, IpAddr};
 use std::str::FromStr;
 
+
+#[derive(Debug)]
 pub struct ServerProperties {
     pub bind: String,
     pub port: u16,
@@ -12,7 +14,7 @@ pub struct ServerProperties {
 impl ServerProperties {
     pub(crate) fn new() -> ServerProperties {
         ServerProperties {
-            bind: "0.0.0.0".to_string(),
+            bind: "127.0.0.1".to_string(),
             port: 6379,
             append_only: false,
             append_filename: "./ldb_data".to_string(),

@@ -38,21 +38,23 @@ impl fmt::Display for ConvertError {
 }
 
 pub enum ValueRef {
-    Bytes(BytesMut)
+    Mut(BytesMut),
+    None
 }
 
 impl ValueRef {
     pub fn frame(self) -> crate::Result<Frame> {
         match self {
-            ValueRef::Bytes(b) => {
+            ValueRef::Mut(b) => {
                 return Ok(Frame::Bulk(b.into()));
             }
+            ValueRef::None => Ok(Frame::Nil),
         }
     }
 
     pub fn incr(&mut self, i: i64) -> Result<i64, ConvertError> {
         match self {
-            ValueRef::Bytes(b) => {
+            ValueRef::Mut(b) => {
                 let fmt:Result<i64,ConvertError> = atoi::atoi::<i64>(&b[..])
                     .ok_or_else(|| "protocol error invalid number format".into());
 
@@ -72,11 +74,12 @@ impl ValueRef {
 
     pub fn as_slice(&self) -> &[u8]{
         match self {
-            ValueRef::Bytes(b) => b.as_ref(),
+            ValueRef::Mut(b) => b.as_ref(),
+            ValueRef::None => "".as_ref(),
         }
     }
 
     pub fn from_u8(u8:Vec<u8>) -> Self {
-        ValueRef::Bytes(BytesMut::from_iter(u8))
+        ValueRef::Mut(BytesMut::from_iter(u8))
     }
 }
