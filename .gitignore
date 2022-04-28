@@ -1,3 +1,4 @@
 /target
 /ldb_data
 *.log
+.DS_Store
