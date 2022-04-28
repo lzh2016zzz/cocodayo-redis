@@ -50,7 +50,7 @@ impl Command {
         
         let result = match self {
             Command::UNKNOWN(cmd,_) => Ok(Some(Frame::Error(format!("ERR unknown command '{}'",cmd)))),
-            Command::PING => Ok(Some(Frame::Str("PONG".to_string()))),
+            Command::PING => Ok(Some(Frame::Str(b"PONG".to_vec()))),
             Command::INFO(info) => info.apply(shared),
             Command::GET(get) => get.apply(shared),
             Command::SET(set) => set.apply(shared),

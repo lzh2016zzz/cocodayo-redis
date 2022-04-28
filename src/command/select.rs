@@ -31,6 +31,6 @@ impl Select {
 
 impl Execable for Select {
     fn apply(self,_ :&mut crate::server::shared::Shared) -> crate::Result<Option<Frame>> {
-        Ok(Some(Frame::Str("OK".to_string())))
+        Ok(Some(Frame::Str(b"OK".to_vec())))
     }
 }

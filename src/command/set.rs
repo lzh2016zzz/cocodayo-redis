@@ -99,7 +99,7 @@ impl Execable for Set {
         let value = self.value;
 
         let valueref = match value {
-            Frame::Str(str) => ValueRef::Mut(BytesMut::from_iter(str.into_bytes())),
+            Frame::Str(str) => ValueRef::Mut(BytesMut::from_iter(str)),
             Frame::Integer(_) => ValueRef::Mut(value.into_bytes()?),
             Frame::Bulk(b) => ValueRef::Mut(b[..].into()),
             _ => return Err("invalid data type".into()),
@@ -119,7 +119,7 @@ impl Execable for Set {
         );
 
         match set_result {
-            Ok(Some(_)) => Ok(Some(Frame::Str("OK".to_string()))),
+            Ok(Some(_)) => Ok(Some(Frame::Str(b"OK".to_vec()))),
             Ok(None) => Ok(Some(Frame::Nil)),
             Err(err) => Err(err),
         }

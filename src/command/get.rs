@@ -25,8 +25,8 @@ impl Execable for Get {
             let frame = value.frame()?;
             let fmt = match frame {
                 Frame::Str(_) | Frame::Nil => frame,
-                Frame::Bulk(b) => Frame::Str(String::from_utf8(b.to_vec())?),
-                Frame::Integer(i) => Frame::Str(format!("{}", i)),
+                Frame::Bulk(b) => Frame::Str(b.to_vec()),
+                Frame::Integer(i) => Frame::Str(format!("{}", i).into_bytes()),
                 _ => {
                     return Err(
                         "WRONGTYPE Operation against a key holding the wrong kind of value".into(),

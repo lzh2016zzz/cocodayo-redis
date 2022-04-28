@@ -5,7 +5,7 @@ use crate::protocol::{FrameError, ParseError, NC, NIL};
 
 #[derive(Clone, Debug)]
 pub enum Frame {
-    Str(String),
+    Str(Vec<u8>),
     Error(String),
     Integer(i64),
     Bulk(Bytes),
@@ -25,7 +25,13 @@ impl Frame {
                 };
                 Ok(str)
             }
-            Frame::Str(str) => Ok(str),
+            Frame::Str(str) => {
+                let s = match String::from_utf8(str) {
+                    Ok(value) => value,
+                    Err(err) => return Err(err.into()),
+                };
+                Ok(s)
+            },
             frame => Err(format!(
                 "protocol error; expected simple frame or bulk frame, got {:?}",
                 frame
@@ -37,7 +43,7 @@ impl Frame {
     pub fn into_decimal(self) -> Result<i64, ParseError> {
         match self {
             Frame::Integer(i) => Ok(i),
-            Frame::Str(s) => atoi::atoi::<i64>(s.as_bytes())
+            Frame::Str(s) => atoi::atoi::<i64>(s.as_slice())
                 .ok_or_else(|| "protocol error invalid number format".into()),
             Frame::Bulk(b) => atoi::atoi::<i64>(&b[..])
                 .ok_or_else(|| "protocol error invalid number format".into()),
@@ -51,7 +57,7 @@ impl Frame {
                 let capacity = str.len() + 10;
                 let mut buf: BytesMut = BytesMut::with_capacity(capacity);
                 buf.put_u8(b'+');
-                buf.put_slice(&str.into_bytes());
+                buf.put_slice(&str);
                 buf.put_slice(NC);
                 Ok(buf)
             }
@@ -106,7 +112,7 @@ pub fn parse_frame(src: &mut Cursor<&[u8]>) -> Result<Frame, FrameError> {
     match s {
         b'+' => {
             let str = read_string(src)?;
-            return Ok(Frame::Str(str));
+            return Ok(Frame::Str(str.into_bytes()));
         }
 
         b'-' => {
@@ -195,7 +201,7 @@ pub fn check(src: &mut Cursor<&[u8]>) -> Result<(), FrameError> {
 
 impl From<&str> for Frame {
     fn from(src: &str) -> Frame {
-        Frame::Str(src.to_string())
+        Frame::Str(src.to_string().into_bytes())
     }
 }
 impl From<i8> for Frame {
@@ -231,8 +237,8 @@ impl From<usize> for Frame {
 impl From<Vec<u8>> for Frame {
     fn from(src: Vec<u8>) -> Self {
         match String::from_utf8(src) {
-            Ok(s) => Frame::Str(s),
-            Err(e) => return Frame::Str("".into()),
+            Ok(s) => Frame::Str(s.into_bytes()),
+            Err(_) => return Frame::Str("".into()),
         }
     }
 }

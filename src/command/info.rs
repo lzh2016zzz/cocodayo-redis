@@ -19,7 +19,18 @@ impl Info {
         };
 
         match parse.fin() {
-            Ok(_) => return Ok(Info { section }),
+            Ok(_) => {
+                match section {
+                    Some(s) =>  {
+                        let section = match String::from_utf8(s) {
+                            Ok(value) => value,
+                            Err(_) => "".to_string(),
+                        };
+                        Ok(Info{section :Some(section)})
+                    },
+                    None => Ok(Info{ section:None}),
+                }
+            },
             Err(_) => return Err("ERR syntax error".into()),
         }
     }
