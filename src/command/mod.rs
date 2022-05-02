@@ -10,6 +10,7 @@ use crate::protocol::frame::Frame;
 use crate::protocol::parse::Parse;
 use crate::server::shared::Shared;
 use crate::command::strlen::StrLen;
+use crate::command::mset::MSet;
 
 use self::incrby::IncrBy;
 use self::ttl::Ttl;
@@ -27,6 +28,7 @@ pub mod flushdb;
 pub mod incrby;
 pub mod mget;
 pub mod strlen;
+pub mod mset;
 
 
 #[derive(Debug)]
@@ -44,7 +46,8 @@ pub enum Command {
     SELECT(Select),
     MGET(MGet),
     UNKNOWN(String,Parse),
-    STRLEN(StrLen)
+    STRLEN(StrLen),
+    MSET(MSet),
 }
 
 impl Command {
@@ -65,6 +68,7 @@ impl Command {
             Command::INCR(incrby) => incrby.apply(shared),
             Command::MGET(mget) => mget.apply(shared),
             Command::STRLEN(strlen) => strlen.apply(shared),
+            Command::MSET(meset) => meset.apply(shared),
         };
 
         return match result{

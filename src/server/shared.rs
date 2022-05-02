@@ -13,7 +13,6 @@ impl Shared {
     pub fn new(append_file : &str) -> Shared {
         let path = Path::new(append_file);
         let mut opts = Options::default();
-
         opts.create_if_missing(true);
         let database = match Rocksdb::open(&opts, path) {
             Ok(some) => some,

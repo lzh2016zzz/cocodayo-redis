@@ -4,6 +4,7 @@ use crate::command::flushdb::Flushdb;
 use crate::command::get::Get;
 use crate::command::incrby::IncrBy;
 use crate::command::info::Info;
+use crate::command::mset::MSet;
 use crate::command::select::Select;
 use crate::command::set::Set;
 use crate::command::strlen::StrLen;
@@ -28,7 +29,7 @@ impl Parse {
                 token: vec.into_iter(),
             });
         }
-        return Err("invalid ".into());
+        return Err("parse err,invalid type of frame".into());
     }
 
     pub fn into_command(mut self) -> Result<Command, ParseError> {
@@ -49,6 +50,7 @@ impl Parse {
             "flushdb" => Command::FLUSHDB(Flushdb::parse(self)?),
             "mget" => Command::MGET(MGet::parse(self)?),
             "strlen" => Command::STRLEN(StrLen::parse(self)?),
+            "mset" => Command::MSET(MSet::parse(self)?),
             _ => Command::UNKNOWN(command_name, self),
         };
         Ok(cmd)

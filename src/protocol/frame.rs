@@ -35,6 +35,18 @@ impl Frame {
     }
 
 
+    pub fn into_vec(self) -> Result<Vec<u8>, ParseError>{
+        match self {
+            Frame::Bulk(bytes) => Ok(bytes.to_vec()),
+            Frame::Str(str) => Ok(str),
+            frame => Err(format!(
+                "protocol error; expected simple frame or bulk frame, got {:?}",
+                frame
+            )
+            .into()),
+        }
+    }
+
     pub fn into_string(self) -> Result<String, ParseError> {
         match self {
             Frame::Bulk(bytes) => {

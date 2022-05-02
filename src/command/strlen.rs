@@ -29,8 +29,7 @@ impl Execable for StrLen {
             let frame = value.frame()?;
             return Ok(Some(Frame::Str(format!("{}",frame.len()).into())));
         }
-
-        return Ok(Some(Frame::Str("0".into())))
+        return Ok(Some(Frame::Str(b"0".to_vec())))
 
     }
 }
