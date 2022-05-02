@@ -15,6 +15,26 @@ pub enum Frame {
 
 
 impl Frame {
+
+
+    pub fn len(&self) -> usize {
+        match self {
+            Frame::Str(s) => s.len(),
+            Frame::Error(err) => err.len(),
+            Frame::Integer(i) => format!("{}",i).len(),
+            Frame::Bulk(b) => b.len(),
+            Frame::Array(arr) => {
+                let mut len:usize = 0;
+                for item in arr {
+                    len += item.len()
+                }
+                len
+            },
+            Frame::Nil => 0,
+        }
+    }
+
+
     pub fn into_string(self) -> Result<String, ParseError> {
         match self {
             Frame::Bulk(bytes) => {
@@ -75,14 +95,13 @@ impl Frame {
                 buf.put_slice(NC);
                 Ok(buf)
             }
-            Frame::Bulk(s) => {
-                let slice = &s[..];
+            Frame::Bulk(slice) => {
                 let s = &i_to_string(slice.len() as usize).into_bytes();
-                let mut buf: BytesMut = BytesMut::with_capacity(s.len() + 10);
+                let mut buf: BytesMut = BytesMut::with_capacity(slice.len() + 10);
                 buf.put_u8(b'$');
                 buf.put_slice(s);
                 buf.put_slice(NC);
-                buf.put_slice(slice);
+                buf.put(&slice.to_vec()[..]);
                 buf.put_slice(NC);
                 Ok(buf)
             }

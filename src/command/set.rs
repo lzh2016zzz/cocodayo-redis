@@ -1,5 +1,5 @@
 
-use bytes::{BytesMut};
+
 
 use crate::{
     protocol::{frame::Frame, parse::Parse, ParseError},
@@ -99,9 +99,9 @@ impl Execable for Set {
         let value = self.value;
 
         let valueref = match value {
-            Frame::Str(str) => ValueRef::Mut(BytesMut::from_iter(str)),
-            Frame::Integer(_) => ValueRef::Mut(value.into_bytes()?),
-            Frame::Bulk(b) => ValueRef::Mut(b[..].into()),
+            Frame::Str(str) => ValueRef::Bytes(str),
+            Frame::Integer(_) => ValueRef::Bytes(value.into_bytes()?.to_vec()),
+            Frame::Bulk(b) => ValueRef::Bytes(b[..].into()),
             _ => return Err("invalid data type".into()),
         };
 

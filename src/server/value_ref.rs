@@ -4,7 +4,7 @@ use std::{
     fmt,
 };
 
-use bytes::{BufMut, BytesMut};
+use bytes::{BufMut};
 
 use crate::protocol::frame::Frame;
 
@@ -38,25 +38,23 @@ impl fmt::Display for ConvertError {
 }
 
 pub enum ValueRef {
-    Mut(BytesMut),
+    Bytes(Vec<u8>),
     None
 }
 
 impl ValueRef {
     pub fn frame(self) -> crate::Result<Frame> {
         match self {
-            ValueRef::Mut(b) => {
-                return Ok(Frame::Bulk(b.into()));
-            }
             ValueRef::None => Ok(Frame::Nil),
+            ValueRef::Bytes(u8) => Ok(Frame::Str(u8)),
         }
     }
 
     pub fn incr(&mut self, i: i64) -> Result<i64, ConvertError> {
         match self {
-            ValueRef::Mut(b) => {
-                let fmt:Result<i64,ConvertError> = atoi::atoi::<i64>(&b[..])
-                    .ok_or_else(|| "protocol error invalid number format".into());
+            ValueRef::Bytes(b) => {
+                let fmt:Result<i64,ConvertError> = atoi::atoi::<i64>(b)
+                    .ok_or_else(|| ConvertError::InvalidNumberFormat);
 
                 match fmt {
                         Ok(mut num) => {
@@ -74,12 +72,12 @@ impl ValueRef {
 
     pub fn as_slice(&self) -> &[u8]{
         match self {
-            ValueRef::Mut(b) => b.as_ref(),
             ValueRef::None => "".as_ref(),
+            ValueRef::Bytes(r) => &r,
         }
     }
 
     pub fn from_u8(u8:Vec<u8>) -> Self {
-        ValueRef::Mut(BytesMut::from_iter(u8))
+        ValueRef::Bytes(u8)
     }
 }

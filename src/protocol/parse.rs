@@ -6,6 +6,7 @@ use crate::command::incrby::IncrBy;
 use crate::command::info::Info;
 use crate::command::select::Select;
 use crate::command::set::Set;
+use crate::command::strlen::StrLen;
 use crate::command::ttl::Ttl;
 use crate::command::Command;
 use crate::command::mget::MGet;
@@ -47,6 +48,7 @@ impl Parse {
             "incrby" =>Command::INCR(IncrBy::parse(self,false)?),
             "flushdb" => Command::FLUSHDB(Flushdb::parse(self)?),
             "mget" => Command::MGET(MGet::parse(self)?),
+            "strlen" => Command::STRLEN(StrLen::parse(self)?),
             _ => Command::UNKNOWN(command_name, self),
         };
         Ok(cmd)

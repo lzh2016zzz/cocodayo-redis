@@ -39,7 +39,7 @@ impl Execable for IncrBy {
                 increment
             },
             None => {
-                let value_ref = ValueRef::Mut("1".into());
+                let value_ref = ValueRef::Bytes("1".into());
                 shared.set_default(&key, value_ref)?;
                 1
             }

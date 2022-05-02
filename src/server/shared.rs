@@ -8,10 +8,12 @@ pub struct Shared {
     append_file : String,
 }
 
+
 impl Shared {
     pub fn new(append_file : &str) -> Shared {
         let path = Path::new(append_file);
         let mut opts = Options::default();
+
         opts.create_if_missing(true);
         let database = match Rocksdb::open(&opts, path) {
             Ok(some) => some,
@@ -46,6 +48,7 @@ impl Shared {
             return Ok(None);
         }
     }   
+
 
     pub fn get(&self, key: &str) -> Option<ValueRef> {
 

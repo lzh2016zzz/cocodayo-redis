@@ -1,5 +1,5 @@
 
-use crate::{protocol::{parse::Parse, ParseError, frame::{self, Frame}}, server::value_ref::{self, ValueRef}};
+use crate::{protocol::{parse::Parse, ParseError, frame::{self, Frame}}, server::value_ref::{ValueRef}};
 
 
 
@@ -28,12 +28,11 @@ impl MGet {
 impl super::Execable for MGet {
     fn apply(self,shared :&mut crate::server::shared::Shared) -> crate::Result<Option<frame::Frame>> {
         let keys = self.keys;
-        let mut result = Vec::new();
+        let mut result = Vec::with_capacity(keys.len());
         for key in keys {
             match shared.get(&key) {
-                Some(ValueRef::Mut(m)) => {
-                    let bytes =m.to_vec();
-                    result.push(bytes.into());
+                Some(ValueRef::Bytes(r)) => {
+                    result.push(r.into());
                 },
                 Some(ValueRef::None) | None => result.push(Frame::Nil),
             }

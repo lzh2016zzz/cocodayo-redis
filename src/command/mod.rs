@@ -9,6 +9,7 @@ use crate::command::flushdb::Flushdb;
 use crate::protocol::frame::Frame;
 use crate::protocol::parse::Parse;
 use crate::server::shared::Shared;
+use crate::command::strlen::StrLen;
 
 use self::incrby::IncrBy;
 use self::ttl::Ttl;
@@ -25,6 +26,7 @@ pub mod ttl;
 pub mod flushdb;
 pub mod incrby;
 pub mod mget;
+pub mod strlen;
 
 
 #[derive(Debug)]
@@ -41,7 +43,8 @@ pub enum Command {
     PTTL(Ttl),
     SELECT(Select),
     MGET(MGet),
-    UNKNOWN(String,Parse)
+    UNKNOWN(String,Parse),
+    STRLEN(StrLen)
 }
 
 impl Command {
@@ -61,6 +64,7 @@ impl Command {
             Command::FLUSHDB(flushdb) => flushdb.apply(shared),
             Command::INCR(incrby) => incrby.apply(shared),
             Command::MGET(mget) => mget.apply(shared),
+            Command::STRLEN(strlen) => strlen.apply(shared),
         };
 
         return match result{
