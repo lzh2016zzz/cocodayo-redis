@@ -1,3 +1,4 @@
+use crate::protocol::ParseError;
 use crate::protocol::parse::Parse;
 use crate::server::db::{CommandResult, Db};
 use crate::server::Connection;
@@ -41,6 +42,9 @@ impl Handler {
                         self.connection.write_and_flush_frame(Frame::Nil).await?;
                     }
                 }
+                Err(ParseError::EOF) =>  {
+                    self.connection.write_and_flush_frame(Frame::Error("ERR wrong number of arguments for command".to_string())).await?;
+                },
                 Err(err) => {
                     let err = Frame::Error(format!("{}", err));
                     let _ = self.connection.write_and_flush_frame(err).await?;

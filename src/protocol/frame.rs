@@ -347,6 +347,6 @@ fn skip(src: &mut Cursor<&[u8]>, n: usize) -> Result<(), FrameError> {
 }
 
 fn i_to_string(n: usize) -> String {
-    return format!("{}", n);
+    return n.to_string();
 }
 

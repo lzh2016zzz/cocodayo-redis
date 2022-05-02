@@ -6,6 +6,7 @@ use crate::command::incrby::IncrBy;
 use crate::command::info::Info;
 use crate::command::keys::Keys;
 use crate::command::mset::MSet;
+use crate::command::scan::Scan;
 use crate::command::select::Select;
 use crate::command::set::Set;
 use crate::command::strlen::StrLen;
@@ -53,6 +54,7 @@ impl Parse {
             "strlen" => Command::STRLEN(StrLen::parse(self)?),
             "mset" => Command::MSET(MSet::parse(self)?),
             "keys" => Command::KEYS(Keys::parse(self)?),
+            "scan" => Command::SCAN(Scan::parse(self)?),
             _ => Command::UNKNOWN(command_name, self),
         };
         Ok(cmd)
@@ -61,6 +63,7 @@ impl Parse {
     pub fn next(&mut self) -> Result<Frame, ParseError> {
         self.token.next().ok_or_else(|| ParseError::EOF)
     }
+
 
     pub fn remaining(&mut self) -> Result<Vec<Frame>, ParseError> {
         let mut next = self.token.next();

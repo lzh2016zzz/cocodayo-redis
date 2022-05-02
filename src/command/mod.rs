@@ -14,6 +14,7 @@ use crate::command::mset::MSet;
 
 use self::incrby::IncrBy;
 use self::keys::Keys;
+use self::scan::Scan;
 use self::ttl::Ttl;
 
 
@@ -31,6 +32,7 @@ pub mod mget;
 pub mod strlen;
 pub mod mset;
 pub mod keys;
+pub mod scan;
 
 
 #[derive(Debug)]
@@ -51,6 +53,7 @@ pub enum Command {
     STRLEN(StrLen),
     MSET(MSet),
     KEYS(Keys),
+    SCAN(Scan)
 }
 
 impl Command {
@@ -73,6 +76,7 @@ impl Command {
             Command::STRLEN(strlen) => strlen.apply(shared),
             Command::MSET(meset) => meset.apply(shared),
             Command::KEYS(keys) => keys.apply(shared),
+            Command::SCAN(scan) => scan.apply(shared),
         };
 
         return match result{

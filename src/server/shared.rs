@@ -5,7 +5,6 @@ use crate::{server::value_ref::ValueRef, utils};
 
 pub struct Shared {
     database: Rocksdb,
-    append_file: String,
 }
 
 impl Shared {
@@ -13,18 +12,19 @@ impl Shared {
         let path = Path::new(append_file);
         let mut opts = Options::default();
         opts.create_if_missing(true);
+        opts.create_missing_column_families(true);
         let database = match Rocksdb::open(&opts, path) {
             Ok(some) => some,
             Err(err) => panic!("failed to initialize shared database,{}", err),
         };
 
         Shared {
-            database,
-            append_file: append_file.to_string(),
+            database
         }
     }
 
     pub fn scan_for(&self, pattern: Option<&str>, skip: i32,cnt : usize) -> (Vec<ValueRef>,usize) {
+
         let iterator = self.database.iterator(rocksdb::IteratorMode::Start);
         let mut values = Vec::new();
         let mut skip = skip;
@@ -81,6 +81,7 @@ impl Shared {
     }
 
     pub fn get(&self, key: &str) -> Option<ValueRef> {
+
         match self.database.get(key.as_bytes()) {
             Ok(Some(s)) => Some(ValueRef::from_u8(s.to_vec())),
             Ok(None) => Some(ValueRef::None),
@@ -110,9 +111,7 @@ impl Shared {
     }
 
     pub fn flush(&mut self) -> crate::Result<()> {
-        let path = Path::new(&self.append_file);
-        let opt = Options::default();
-        match Rocksdb::destroy(&opt, path) {
+        match self.database.flush() {
             Ok(_) => Ok(()),
             Err(err) => Err(err.into()),
         }

@@ -60,7 +60,7 @@ impl ValueRef {
                         Ok(mut num) => {
                             num += i;
                             b.clear();
-                            b.put_slice(&format!("{}", num).into_bytes());
+                            b.put_slice(&num.to_string().into_bytes());
                             Ok(num)
                         },
                         Err(err) => return Err(err),
