@@ -68,7 +68,7 @@ impl Command {
             Command::SET(set) => set.apply(shared),
             Command::SELECT(select) => select.apply(shared),
             Command::DEL(del) => del.apply(shared),
-            Command::EXISTS(_) => todo!(),
+            Command::EXISTS(exists) => exists.apply(shared),
             Command::TTL(ttl) | Command::PTTL(ttl) => ttl.apply(shared),
             Command::FLUSHDB(flushdb) => flushdb.apply(shared),
             Command::INCR(incrby) => incrby.apply(shared),
