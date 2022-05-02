@@ -1,35 +1,67 @@
-use std::{path::Path};
-use rocksdb::{DB as Rocksdb, Options};
+use rocksdb::{Options, DB as Rocksdb};
+use std::path::Path;
 
-use crate::server::value_ref::ValueRef;
+use crate::{server::value_ref::ValueRef, utils};
 
 pub struct Shared {
-    database : Rocksdb,
-    append_file : String,
+    database: Rocksdb,
+    append_file: String,
 }
 
-
 impl Shared {
-    pub fn new(append_file : &str) -> Shared {
+    pub fn new(append_file: &str) -> Shared {
         let path = Path::new(append_file);
         let mut opts = Options::default();
         opts.create_if_missing(true);
         let database = match Rocksdb::open(&opts, path) {
             Ok(some) => some,
-            Err(err) => panic!("failed to initialize shared database,{}",err),
+            Err(err) => panic!("failed to initialize shared database,{}", err),
         };
 
-        Shared { database,append_file : append_file.to_string() }
+        Shared {
+            database,
+            append_file: append_file.to_string(),
+        }
+    }
+
+    pub fn scan_for(&self, pattern: Option<&str>, skip: i32,cnt : usize) -> (Vec<ValueRef>,usize) {
+        let iterator = self.database.iterator(rocksdb::IteratorMode::Start);
+        let mut values = Vec::new();
+        let mut skip = skip;
+        for (i,(key,_)) in iterator.enumerate() {
+            if skip > 0 {
+                skip -= 1;
+            } else {
+                if let Some(pattern) = pattern {
+                    if pattern == "*" {
+                        values.push(ValueRef::Bytes(key.to_vec()));
+                    } else {
+                        let pattern = pattern.as_bytes();
+                        if utils::backtrack_match(&key, pattern) {
+                            values.push(ValueRef::Bytes(key.to_vec()));
+                        }
+                    }
+                } else {
+                    values.push(ValueRef::Bytes(key.to_vec()));
+                }
+                if cnt > 0 && cnt == values.len() {
+                    return (values,i)
+                }
+            }
+            
+        }
+        let len = values.len();
+        (values,len)
     }
 
     pub fn len(&self) -> usize {
-       return 0
+        return 0;
     }
 
-    pub fn set_default(&mut self,key: &str,value: ValueRef) -> crate::Result<Option<()>> {
+    pub fn set_default(&mut self, key: &str, value: ValueRef) -> crate::Result<Option<()>> {
         self.set(key, value, false, false)
     }
-    
+
     pub fn set(
         &mut self,
         key: &str,
@@ -41,37 +73,42 @@ impl Shared {
         if (nx && !exists) || (px && exists) || (!nx && !px) {
             match self.database.put(key.as_bytes(), value.as_slice()) {
                 Ok(_) => Ok(Some(())),
-                Err(e) => { Err(e.into()) }
+                Err(e) => Err(e.into()),
             }
         } else {
             return Ok(None);
         }
-    }   
-
+    }
 
     pub fn get(&self, key: &str) -> Option<ValueRef> {
-
-         match self.database.get(key.as_bytes()) {
+        match self.database.get(key.as_bytes()) {
             Ok(Some(s)) => Some(ValueRef::from_u8(s.to_vec())),
             Ok(None) => Some(ValueRef::None),
             Err(err) => {
-                log::error!("an error occurred while determining get,key = {} err = {}",key,err);
+                log::error!(
+                    "an error occurred while determining get,key = {} err = {}",
+                    key,
+                    err
+                );
                 None
-            },
+            }
         }
     }
-
 
     pub fn del(&mut self, key: &str) -> i8 {
         match self.database.delete(key.as_bytes()) {
             Ok(()) => 1,
             Err(err) => {
-                log::error!("an error occurred while determining delete,key = {} err = {}",key,err);
+                log::error!(
+                    "an error occurred while determining delete,key = {} err = {}",
+                    key,
+                    err
+                );
                 0
-            },
+            }
         }
     }
-    
+
     pub fn flush(&mut self) -> crate::Result<()> {
         let path = Path::new(&self.append_file);
         let opt = Options::default();
@@ -81,11 +118,10 @@ impl Shared {
         }
     }
 
-    pub fn is_exists(& self, key: &str) -> bool {
+    pub fn is_exists(&self, key: &str) -> bool {
         match self.get(key) {
             Some(_) => true,
             None => false,
         }
     }
-
 }

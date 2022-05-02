@@ -4,6 +4,7 @@ use crate::command::flushdb::Flushdb;
 use crate::command::get::Get;
 use crate::command::incrby::IncrBy;
 use crate::command::info::Info;
+use crate::command::keys::Keys;
 use crate::command::mset::MSet;
 use crate::command::select::Select;
 use crate::command::set::Set;
@@ -51,6 +52,7 @@ impl Parse {
             "mget" => Command::MGET(MGet::parse(self)?),
             "strlen" => Command::STRLEN(StrLen::parse(self)?),
             "mset" => Command::MSET(MSet::parse(self)?),
+            "keys" => Command::KEYS(Keys::parse(self)?),
             _ => Command::UNKNOWN(command_name, self),
         };
         Ok(cmd)

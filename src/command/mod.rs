@@ -13,6 +13,7 @@ use crate::command::strlen::StrLen;
 use crate::command::mset::MSet;
 
 use self::incrby::IncrBy;
+use self::keys::Keys;
 use self::ttl::Ttl;
 
 
@@ -29,6 +30,7 @@ pub mod incrby;
 pub mod mget;
 pub mod strlen;
 pub mod mset;
+pub mod keys;
 
 
 #[derive(Debug)]
@@ -48,6 +50,7 @@ pub enum Command {
     UNKNOWN(String,Parse),
     STRLEN(StrLen),
     MSET(MSet),
+    KEYS(Keys),
 }
 
 impl Command {
@@ -69,6 +72,7 @@ impl Command {
             Command::MGET(mget) => mget.apply(shared),
             Command::STRLEN(strlen) => strlen.apply(shared),
             Command::MSET(meset) => meset.apply(shared),
+            Command::KEYS(keys) => keys.apply(shared),
         };
 
         return match result{
