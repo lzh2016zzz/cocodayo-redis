@@ -111,10 +111,7 @@ impl Shared {
     }
 
     pub fn flush(&mut self) -> crate::Result<()> {
-        match self.database.flush() {
-            Ok(_) => Ok(()),
-            Err(err) => Err(err.into()),
-        }
+        Err("invalid operation".into())
     }
 
     pub fn is_exists(&self, key: &str) -> bool {

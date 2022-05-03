@@ -1,5 +1,5 @@
 [package]
-name = "persistent-redis"
+name = "cocodayo-redis"
 version = "0.1.0"
 edition = "2021"
 
