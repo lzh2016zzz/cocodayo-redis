@@ -3,7 +3,7 @@
 
 use crate::{
     protocol::{frame::Frame, parse::Parse, ParseError},
-    server::value_ref::ValueRef,
+    server::value_ref::Value,
 };
 
 use super::Execable;
@@ -99,9 +99,9 @@ impl Execable for Set {
         let value = self.value;
 
         let valueref = match value {
-            Frame::Str(str) => ValueRef::Bytes(str),
-            Frame::Integer(_) => ValueRef::Bytes(value.into_bytes()?.to_vec()),
-            Frame::Bulk(b) => ValueRef::Bytes(b[..].into()),
+            Frame::Str(str) => Value::Bytes(str),
+            Frame::Integer(_) => Value::Bytes(value.into_bytes()?.to_vec()),
+            Frame::Bulk(b) => Value::Bytes(b[..].into()),
             _ => return Err("invalid data type".into()),
         };
 

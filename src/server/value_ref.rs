@@ -33,22 +33,23 @@ impl fmt::Display for ConvertError {
     }
 }
 
-pub enum ValueRef {
+pub enum Value {
     Bytes(Vec<u8>),
     None,
 }
 
-impl ValueRef {
+
+impl Value {
     pub fn frame(self) -> crate::Result<Frame> {
         match self {
-            ValueRef::None => Ok(Frame::Nil),
-            ValueRef::Bytes(u8) => Ok(Frame::Str(u8)),
+            Value::None => Ok(Frame::Nil),
+            Value::Bytes(u8) => Ok(Frame::Str(u8)),
         }
     }
 
     pub fn incr(&mut self, i: i64) -> Result<i64, ConvertError> {
         match self {
-            ValueRef::Bytes(b) => {
+            Value::Bytes(b) => {
                 let fmt: Result<i64, ConvertError> =
                     atoi::atoi::<i64>(b).ok_or_else(|| ConvertError::InvalidNumberFormat);
 
@@ -68,12 +69,12 @@ impl ValueRef {
 
     pub fn as_slice(&self) -> &[u8] {
         match self {
-            ValueRef::None => "".as_ref(),
-            ValueRef::Bytes(r) => &r,
+            Value::None => "".as_ref(),
+            Value::Bytes(r) => &r,
         }
     }
 
     pub fn from_u8(u8: Vec<u8>) -> Self {
-        ValueRef::Bytes(u8)
+        Value::Bytes(u8)
     }
 }

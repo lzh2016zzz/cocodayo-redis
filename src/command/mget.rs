@@ -1,5 +1,5 @@
 
-use crate::{protocol::{parse::Parse, ParseError, frame::{self, Frame}}, server::value_ref::ValueRef};
+use crate::{protocol::{parse::Parse, ParseError, frame::{self, Frame}}, server::value_ref::Value};
 
 
 
@@ -31,10 +31,10 @@ impl super::Execable for MGet {
         let mut result = Vec::with_capacity(keys.len());
         for key in keys {
             match shared.get(&key) {
-                Some(ValueRef::Bytes(r)) => {
+                Some(Value::Bytes(r)) => {
                     result.push(r.into());
                 },
-                Some(ValueRef::None) | None => result.push(Frame::Nil),
+                Some(Value::None) | None => result.push(Frame::Nil),
                 _ => return Err("WRONGTYPE Operation against a key holding the wrong kind of value".into())
             }
         }

@@ -1,6 +1,6 @@
 use crate::{
     protocol::{frame::Frame, parse::Parse, ParseError},
-    server::{shared::Shared, value_ref::ValueRef},
+    server::{shared::Shared, value_ref::Value},
 };
 
 use super::Execable;
@@ -35,12 +35,12 @@ impl Execable for IncrBy {
         let value = match optref {
             Some(mut r) => {
                 let increment =  r.incr(num)?;
-                shared.set_default(&key, r)?;
+                shared.default_set(&key, r)?;
                 increment
             },
             None => {
-                let value_ref = ValueRef::Bytes("1".into());
-                shared.set_default(&key, value_ref)?;
+                let value_ref = Value::Bytes("1".into());
+                shared.default_set(&key, value_ref)?;
                 1
             }
         };

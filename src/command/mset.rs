@@ -1,4 +1,4 @@
-use crate::{protocol::{frame::{self, Frame}, parse::Parse, ParseError}, server::value_ref::ValueRef};
+use crate::{protocol::{frame::{self, Frame}, parse::Parse, ParseError}, server::value_ref::Value};
 
 use super::Execable;
 
@@ -26,7 +26,7 @@ impl Execable for MSet {
     fn apply(self,shared :&mut crate::server::shared::Shared) -> crate::Result<Option<frame::Frame>> {
         let mut pairs = self.pairs;
         while pairs.len() != 0 && pairs.len() % 2 == 0 {
-            let value = ValueRef::Bytes(pairs.pop().unwrap()); 
+            let value = Value::Bytes(pairs.pop().unwrap()); 
             let key =String::from_utf8(pairs.pop().unwrap())?;
             let _ = shared.set(&key, value, false);
         }
