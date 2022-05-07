@@ -24,7 +24,7 @@ impl Error for FrameError {}
 
 impl From<&str> for FrameError {
     fn from(src: &str) -> FrameError {
-        FrameError::Other(src.to_string().into())
+        FrameError::Other(src.into())
     }
 }
 

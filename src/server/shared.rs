@@ -1,10 +1,11 @@
-use rocksdb::{Options, DB as Rocksdb};
+use rocksdb::{Options, DB as Rocksdb, ColumnFamily};
 use std::path::Path;
 
 use crate::{server::value_ref::ValueRef, utils};
 
 pub struct Shared {
     database: Rocksdb,
+    options: Options,
 }
 
 impl Shared {
@@ -19,16 +20,16 @@ impl Shared {
         };
 
         Shared {
-            database
+            database,
+            options: opts,
         }
     }
 
-    pub fn scan_for(&self, pattern: Option<&str>, skip: i32,cnt : usize) -> (Vec<ValueRef>,usize) {
-
+    pub fn scan_for(&self, pattern: Option<&str>, skip: i32, cnt: usize) -> (Vec<ValueRef>, usize) {
         let iterator = self.database.iterator(rocksdb::IteratorMode::Start);
         let mut values = Vec::new();
         let mut skip = skip;
-        for (i,(key,_)) in iterator.enumerate() {
+        for (i, (key, _)) in iterator.enumerate() {
             if skip > 0 {
                 skip -= 1;
             } else {
@@ -45,13 +46,12 @@ impl Shared {
                     values.push(ValueRef::Bytes(key.to_vec()));
                 }
                 if cnt > 0 && cnt == values.len() {
-                    return (values,i)
+                    return (values, i);
                 }
             }
-            
         }
         let len = values.len();
-        (values,len)
+        (values, len)
     }
 
     pub fn len(&self) -> usize {
@@ -59,7 +59,7 @@ impl Shared {
     }
 
     pub fn set_default(&mut self, key: &str, value: ValueRef) -> crate::Result<Option<()>> {
-        self.set(key, value, false, false)
+        self.set(key, value, false)
     }
 
     pub fn set(
@@ -67,10 +67,8 @@ impl Shared {
         key: &str,
         value: ValueRef,
         nx: bool,
-        px: bool,
     ) -> crate::Result<Option<()>> {
-        let exists = self.is_exists(key);
-        if (nx && !exists) || (px && exists) || (!nx && !px) {
+        if (nx && self.is_exists(key)) || !nx  {
             match self.database.put(key.as_bytes(), value.as_slice()) {
                 Ok(_) => Ok(Some(())),
                 Err(e) => Err(e.into()),
@@ -81,7 +79,6 @@ impl Shared {
     }
 
     pub fn get(&self, key: &str) -> Option<ValueRef> {
-
         match self.database.get(key.as_bytes()) {
             Ok(Some(s)) => Some(ValueRef::from_u8(s.to_vec())),
             Ok(None) => Some(ValueRef::None),
@@ -118,6 +115,37 @@ impl Shared {
         match self.get(key) {
             Some(_) => true,
             None => false,
+        }
+    }
+    
+}
+
+
+//private method implementation 
+impl Shared{
+
+
+    fn set_with_sub_key_internal(&mut self, key: &str, sub_key : &[u8], value: &[u8]) -> crate::Result<Option<()>> {
+        
+        let column_family = self.get_column_family(key)?;
+
+        match  self.database.put_cf(column_family, sub_key, value) {
+            Ok(()) => Ok(Some(())),
+            Err(err) => return Err(err.into()),
+        }
+    }
+
+
+    fn get_column_family(&mut self, key: &str) -> crate::Result<&ColumnFamily> {
+         match self.database.cf_handle(key) {
+            Some(col) => Ok(col),
+            None => match self.database.create_cf(key, &self.options) {
+                Ok(_) => match self.database.cf_handle(key) {
+                    Some(value) => Ok(value),
+                    None => return Err("Some errors occurred in get column family".into()),
+                },
+                Err(err) => return Err(err.into()),
+            },
         }
     }
 }

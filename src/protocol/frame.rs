@@ -232,7 +232,7 @@ pub fn check(src: &mut Cursor<&[u8]>) -> Result<(), FrameError> {
 
 impl From<&str> for Frame {
     fn from(src: &str) -> Frame {
-        Frame::Str(src.to_string().into_bytes())
+        Frame::Str(src.as_bytes().to_vec())
     }
 }
 impl From<i8> for Frame {

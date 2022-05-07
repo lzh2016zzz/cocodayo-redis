@@ -1,10 +1,6 @@
+use std::{error::Error, fmt};
 
-use std::{
-    error::Error,
-    fmt,
-};
-
-use bytes::{BufMut};
+use bytes::BufMut;
 
 use crate::protocol::frame::Frame;
 
@@ -39,7 +35,7 @@ impl fmt::Display for ConvertError {
 
 pub enum ValueRef {
     Bytes(Vec<u8>),
-    None
+    None,
 }
 
 impl ValueRef {
@@ -53,31 +49,31 @@ impl ValueRef {
     pub fn incr(&mut self, i: i64) -> Result<i64, ConvertError> {
         match self {
             ValueRef::Bytes(b) => {
-                let fmt:Result<i64,ConvertError> = atoi::atoi::<i64>(b)
-                    .ok_or_else(|| ConvertError::InvalidNumberFormat);
+                let fmt: Result<i64, ConvertError> =
+                    atoi::atoi::<i64>(b).ok_or_else(|| ConvertError::InvalidNumberFormat);
 
                 match fmt {
-                        Ok(mut num) => {
-                            num += i;
-                            b.clear();
-                            b.put_slice(&num.to_string().into_bytes());
-                            Ok(num)
-                        },
-                        Err(err) => return Err(err),
+                    Ok(mut num) => {
+                        num += i;
+                        b.clear();
+                        b.put_slice(&num.to_string().into_bytes());
+                        Ok(num)
+                    }
+                    Err(err) => return Err(err),
                 }
             }
             _ => Err("WRONGTYPE Operation against a key holding the wrong kind of value".into()),
         }
     }
 
-    pub fn as_slice(&self) -> &[u8]{
+    pub fn as_slice(&self) -> &[u8] {
         match self {
             ValueRef::None => "".as_ref(),
             ValueRef::Bytes(r) => &r,
         }
     }
 
-    pub fn from_u8(u8:Vec<u8>) -> Self {
+    pub fn from_u8(u8: Vec<u8>) -> Self {
         ValueRef::Bytes(u8)
     }
 }

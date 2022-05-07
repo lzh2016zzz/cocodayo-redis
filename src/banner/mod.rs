@@ -9,11 +9,13 @@ pub fn banner_show(file_name: &str) {
         Ok(f) => {
             let reader = io::BufReader::new(f);
             for f in reader.lines() {
-                log::info!("{}", f.unwrap())
+                match f {
+                    Ok(value) => log::info!("{}", value),
+                    Err(_) => {}
+                }
             }
         }
         Err(err) => {
-
             if file_name != "" {
                 log::info!("Failed to load banner file ,name : {},{}", file_name, err);
             }
@@ -31,5 +33,4 @@ pub fn banner_show(file_name: &str) {
             log::info!("{}", banner_str)
         }
     }
-
 }
