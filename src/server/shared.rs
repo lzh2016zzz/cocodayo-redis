@@ -1,10 +1,10 @@
-use rocksdb::{Options, DB as Rocksdb, ColumnFamily};
-use std::path::Path;
+use rocksdb::{Options, DB as Rocksdb};
+use std::{path::Path, cell::RefCell};
 
 use crate::{server::value_ref::ValueRef, utils};
 
 pub struct Shared {
-    database: Rocksdb,
+    database: RefCell<Rocksdb>,
     options: Options,
 }
 
@@ -20,13 +20,15 @@ impl Shared {
         };
 
         Shared {
-            database,
+            database:RefCell::new(database),
             options: opts,
         }
     }
 
     pub fn scan_for(&self, pattern: Option<&str>, skip: i32, cnt: usize) -> (Vec<ValueRef>, usize) {
-        let iterator = self.database.iterator(rocksdb::IteratorMode::Start);
+
+        let database = self.database.borrow();
+        let iterator = database.iterator(rocksdb::IteratorMode::Start);
         let mut values = Vec::new();
         let mut skip = skip;
         for (i, (key, _)) in iterator.enumerate() {
@@ -62,14 +64,11 @@ impl Shared {
         self.set(key, value, false)
     }
 
-    pub fn set(
-        &mut self,
-        key: &str,
-        value: ValueRef,
-        nx: bool,
-    ) -> crate::Result<Option<()>> {
-        if (nx && self.is_exists(key)) || !nx  {
-            match self.database.put(key.as_bytes(), value.as_slice()) {
+    pub fn set(&mut self, key: &str, value: ValueRef, nx: bool) -> crate::Result<Option<()>> {
+        if (nx && self.is_exists(key)) || !nx {
+
+            let mut database = self.database.borrow_mut();
+            match database.put(key.as_bytes(), value.as_slice()) {
                 Ok(_) => Ok(Some(())),
                 Err(e) => Err(e.into()),
             }
@@ -79,7 +78,9 @@ impl Shared {
     }
 
     pub fn get(&self, key: &str) -> Option<ValueRef> {
-        match self.database.get(key.as_bytes()) {
+
+        let database = self.database.borrow();
+        match database.get(key.as_bytes()) {
             Ok(Some(s)) => Some(ValueRef::from_u8(s.to_vec())),
             Ok(None) => Some(ValueRef::None),
             Err(err) => {
@@ -94,7 +95,9 @@ impl Shared {
     }
 
     pub fn del(&mut self, key: &str) -> i8 {
-        match self.database.delete(key.as_bytes()) {
+
+        let mut database = self.database.borrow_mut();
+        match database.delete(key.as_bytes()) {
             Ok(()) => 1,
             Err(err) => {
                 log::error!(
@@ -117,35 +120,43 @@ impl Shared {
             None => false,
         }
     }
-    
 }
 
+//private method implementation
+impl Shared {
 
-//private method implementation 
-impl Shared{
+    fn set_with_sub_key_internal(
+        &mut self,
+        key: &str,
+        sub_key: &[u8],
+        value: &[u8],
+    ) -> crate::Result<Option<()>> {
 
+        let database = self.database.borrow();
+        let column_family = {
+            match database.cf_handle(key) {
+                Some(col) => Some(col),
+                None => None,
+            }
+        };
+        let mut database = self.database.borrow_mut();
+        let column_family = match column_family {
+            Some(col) => col,
+            None => {
+                match database.create_cf(key, &self.options) {
+                    Ok(_) => match database.cf_handle(key) {
+                        Some(value) => value,
+                        None => return Err("Some errors occurred in get column family".into()),
+                    },
+                    Err(err) => return Err(err.into()),
+                }
+            },
+        };
 
-    fn set_with_sub_key_internal(&mut self, key: &str, sub_key : &[u8], value: &[u8]) -> crate::Result<Option<()>> {
-        
-        let column_family = self.get_column_family(key)?;
-
-        match  self.database.put_cf(column_family, sub_key, value) {
+        match database.put_cf(column_family, sub_key, value) {
             Ok(()) => Ok(Some(())),
             Err(err) => return Err(err.into()),
         }
     }
 
-
-    fn get_column_family(&mut self, key: &str) -> crate::Result<&ColumnFamily> {
-         match self.database.cf_handle(key) {
-            Some(col) => Ok(col),
-            None => match self.database.create_cf(key, &self.options) {
-                Ok(_) => match self.database.cf_handle(key) {
-                    Some(value) => Ok(value),
-                    None => return Err("Some errors occurred in get column family".into()),
-                },
-                Err(err) => return Err(err.into()),
-            },
-        }
-    }
 }

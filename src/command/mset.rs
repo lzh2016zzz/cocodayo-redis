@@ -28,7 +28,7 @@ impl Execable for MSet {
         while pairs.len() != 0 && pairs.len() % 2 == 0 {
             let value = ValueRef::Bytes(pairs.pop().unwrap()); 
             let key =String::from_utf8(pairs.pop().unwrap())?;
-            let _ = shared.set(&key, value, false, false);
+            let _ = shared.set(&key, value, false);
         }
         return Ok(Some(Frame::Str(b"OK".to_vec())))
     }

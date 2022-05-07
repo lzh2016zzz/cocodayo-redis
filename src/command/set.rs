@@ -114,8 +114,7 @@ impl Execable for Set {
         let set_result = shared.set(
             &self.key,
             valueref,
-            self.nx.is_some(),
-            self.xx.is_some(),
+            self.nx.is_some()
         );
 
         match set_result {
