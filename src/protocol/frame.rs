@@ -48,7 +48,7 @@ impl Frame {
 
     pub fn into_string(self) -> Result<String, ParseError> {
         match self {
-            Frame::Bulk(bytes) => {
+            Frame::Bulk(bytes) | Frame::Str(bytes) => {
                 let b = bytes.to_vec();
                 let str = match String::from_utf8(b) {
                     Ok(s) => s,
@@ -56,13 +56,6 @@ impl Frame {
                 };
                 Ok(str)
             }
-            Frame::Str(str) => {
-                let s = match String::from_utf8(str) {
-                    Ok(value) => value,
-                    Err(err) => return Err(err.into()),
-                };
-                Ok(s)
-            },
             frame => Err(format!(
                 "protocol error; expected simple frame or bulk frame, got {:?}",
                 frame

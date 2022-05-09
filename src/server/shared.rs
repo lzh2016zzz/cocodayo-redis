@@ -1,4 +1,4 @@
-use rocksdb::{BoundColumnFamily, Options, DB as Rocksdb};
+use rocksdb::{BoundColumnFamily, Options, DB as Rocksdb, WriteOptions, WriteBatch};
 use std::{path::Path, sync::Arc};
 
 use crate::{server::value::Value, utils};
@@ -63,10 +63,14 @@ impl Shared {
         self.set(key, value, false)
     }
 
-    pub fn sets_set(&mut self, key: &str, value: Value) -> crate::Result<()> {
-        let value = value.as_slice();
-        self.set_with_sub_key_internal(key, value, b"")?;
-        Ok(())
+    pub fn sets_set(&mut self, key: &str, values: Vec<Value>) -> crate::Result<()> {
+        let mut w = WriteBatch::default();
+        for value in values {
+            let value = value.as_slice();
+            let bound_column_family = self.get_column_family(key)?;
+            w.put_cf(&bound_column_family, value, b"");
+        }
+        self.set_with_sub_key_internal_batch(w)
     }
 
     pub fn hash_set(&mut self, key: &str, sub_key: &str, value: Value) -> crate::Result<()> {
@@ -129,15 +133,25 @@ impl Shared {
 
 //private method implementation
 impl Shared {
+    
+    fn set_with_sub_key_internal_batch(&mut self,batch :WriteBatch) -> crate::Result<()>{
+
+        match self.database.write_opt(batch, &WriteOptions::default()) {
+            Ok(()) => Ok(()),
+            Err(err) => return Err(err.into()),
+        }
+    }
+
+
     fn set_with_sub_key_internal(
         &mut self,
         key: &str,
         sub_key: &[u8],
         value: &[u8],
-    ) -> crate::Result<Option<()>> {
+    ) -> crate::Result<()> {
         let column_family = self.get_column_family(key)?;
         match self.database.put_cf(&column_family, sub_key, value) {
-            Ok(()) => Ok(Some(())),
+            Ok(()) => Ok(()),
             Err(err) => return Err(err.into()),
         }
     }
