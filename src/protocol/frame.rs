@@ -1,4 +1,4 @@
-use bytes::{Buf, BufMut, Bytes, BytesMut};
+use bytes::{Buf, BufMut, BytesMut};
 use std::io::Cursor;
 
 use crate::protocol::{FrameError, ParseError, NC, NIL};
@@ -8,7 +8,7 @@ pub enum Frame {
     Str(Vec<u8>),
     Error(String),
     Integer(i64),
-    Bulk(Bytes),
+    Bulk(Vec<u8>),
     Array(Vec<Frame>),
     Nil,
 }
@@ -37,8 +37,7 @@ impl Frame {
 
     pub fn into_vec(self) -> Result<Vec<u8>, ParseError>{
         match self {
-            Frame::Bulk(bytes) => Ok(bytes.to_vec()),
-            Frame::Str(str) => Ok(str),
+            Frame::Bulk(bytes) | Frame::Str(bytes) => Ok(bytes),
             frame => Err(format!(
                 "protocol error; expected simple frame or bulk frame, got {:?}",
                 frame
@@ -77,7 +76,7 @@ impl Frame {
             Frame::Integer(i) => Ok(i),
             Frame::Str(s) => atoi::atoi::<i64>(s.as_slice())
                 .ok_or_else(|| "protocol error invalid number format".into()),
-            Frame::Bulk(b) => atoi::atoi::<i64>(&b[..])
+            Frame::Bulk(s) => atoi::atoi::<i64>(s.as_slice())
                 .ok_or_else(|| "protocol error invalid number format".into()),
             _ => Err("invalid protocol".into()),
         }
@@ -113,7 +112,7 @@ impl Frame {
                 buf.put_u8(b'$');
                 buf.put_slice(s);
                 buf.put_slice(NC);
-                buf.put(&slice.to_vec()[..]);
+                buf.put(&slice[..]);
                 buf.put_slice(NC);
                 Ok(buf)
             }
@@ -289,14 +288,14 @@ fn read_string(src: &mut Cursor<&[u8]>) -> Result<String, FrameError> {
     return Ok(string);
 }
 
-fn read_bulk(src: &mut Cursor<&[u8]>, len: usize) -> Result<Bytes, FrameError> {
+fn read_bulk(src: &mut Cursor<&[u8]>, len: usize) -> Result<Vec<u8>, FrameError> {
     if src.remaining() < len {
         return Err(FrameError::Incomplete);
     }
 
     let b = &src.chunk()[..len];
 
-    let data = Bytes::copy_from_slice(b);
+    let data = b.to_vec();
 
     skip(src, len + b"\r\n".len())?;
 
