@@ -1,7 +1,7 @@
-use rocksdb::{BoundColumnFamily, ColumnFamily, Options, DB as Rocksdb};
+use rocksdb::{BoundColumnFamily, Options, DB as Rocksdb};
 use std::{path::Path, sync::Arc};
 
-use crate::{server::value_ref::Value, utils};
+use crate::{server::value::Value, utils};
 
 pub struct Shared {
     database: Rocksdb,
@@ -26,28 +26,29 @@ impl Shared {
     }
 
     pub fn scan_for(&self, pattern: Option<&str>, skip: i32, cnt: usize) -> (Vec<Value>, usize) {
-        let iterator = self.database.iterator(rocksdb::IteratorMode::Start);
+        let iterator = self
+            .database
+            .iterator(rocksdb::IteratorMode::Start)
+            .enumerate();
         let mut values = Vec::new();
-        let mut skip = skip;
-        for (i, (key, _)) in iterator.enumerate() {
-            if skip > 0 {
-                skip -= 1;
-            } else {
-                if let Some(pattern) = pattern {
-                    if pattern == "*" {
-                        values.push(Value::Bytes(key.to_vec()));
-                    } else {
-                        let pattern = pattern.as_bytes();
-                        if utils::backtrack_match(&key, pattern) {
-                            values.push(Value::Bytes(key.to_vec()));
-                        }
-                    }
-                } else {
+
+        let skip = if skip < 0 { 0 } else { skip as usize };
+
+        for (i, (key, _)) in iterator.skip(skip) {
+            if let Some(pattern) = pattern {
+                if pattern == "*" {
                     values.push(Value::Bytes(key.to_vec()));
+                } else {
+                    let pattern = pattern.as_bytes();
+                    if utils::backtrack_match(&key, pattern) {
+                        values.push(Value::Bytes(key.to_vec()));
+                    }
                 }
-                if cnt > 0 && cnt == values.len() {
-                    return (values, i);
-                }
+            } else {
+                values.push(Value::Bytes(key.to_vec()));
+            }
+            if cnt > 0 && cnt == values.len() {
+                return (values, i);
             }
         }
         let len = values.len();
@@ -58,11 +59,9 @@ impl Shared {
         return 0;
     }
 
-
     pub fn default_set(&mut self, key: &str, value: Value) -> crate::Result<Option<()>> {
         self.set(key, value, false)
     }
-
 
     pub fn sets_set(&mut self, key: &str, value: Value) -> crate::Result<()> {
         let value = value.as_slice();
@@ -70,7 +69,7 @@ impl Shared {
         Ok(())
     }
 
-    pub fn hash_set(&mut self,key : &str, sub_key: &str,value: Value) -> crate::Result<()> {
+    pub fn hash_set(&mut self, key: &str, sub_key: &str, value: Value) -> crate::Result<()> {
         let value = value.as_slice();
         self.set_with_sub_key_internal(key, sub_key.as_bytes(), value)?;
         Ok(())

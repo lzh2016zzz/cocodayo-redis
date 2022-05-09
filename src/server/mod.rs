@@ -1,7 +1,7 @@
 pub mod connection;
 pub mod db;
 pub mod handler;
-pub mod value_ref;
+pub mod value;
 pub mod shared;
 
 use crate::config::ServerProperties;

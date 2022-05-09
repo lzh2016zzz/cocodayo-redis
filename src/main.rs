@@ -39,7 +39,7 @@ async fn main() -> crate::Result<()> {
         },
     };
 
-    log::info!("persistent server listen on {}", props.get_bind_addr());
+    log::info!("persistent redis server listen on {}", props.get_bind_addr());
 
     server::run(listener,props, tokio::signal::ctrl_c()).await;
 

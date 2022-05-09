@@ -56,8 +56,6 @@ impl Value {
                 match fmt {
                     Ok(mut num) => {
                         num += i;
-                        b.clear();
-                        b.put_slice(&num.to_string().into_bytes());
                         Ok(num)
                     }
                     Err(err) => return Err(err),
