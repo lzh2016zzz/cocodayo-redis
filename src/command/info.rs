@@ -69,6 +69,6 @@ impl Execable for Info {
                 );
             }
         }
-        Ok(Some(Frame::Bulk(Bytes::from(buf.into_bytes()))))
+        Ok(Some(Frame::Bulk(buf.into_bytes())))
     }
 }

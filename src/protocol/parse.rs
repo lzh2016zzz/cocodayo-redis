@@ -78,6 +78,21 @@ impl Parse {
         Ok(vec)
     }
 
+    pub fn remaining_into_vec(&mut self) -> Result<Vec<Vec<u8>>, ParseError> {
+        let frames = self.remaining()?;
+        let keys = frames
+            .into_iter()
+            .map(|key| match key.into_vec() {
+                Ok(s) => Ok(s),
+                Err(er) => return Err(er),
+            })
+            .filter(|s| s.is_ok())
+            .map(|f| f.unwrap())
+            .collect::<Vec<Vec<u8>>>();
+        Ok(keys)
+    }
+
+
     pub fn remaining_into_string_vec(mut self) -> Result<Vec<String>, ParseError> {
         let frames = self.remaining()?;
         let keys = frames
