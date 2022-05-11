@@ -1,7 +1,10 @@
-use rocksdb::{BoundColumnFamily, Options, DB as Rocksdb, WriteOptions, WriteBatch};
+use rocksdb::{BoundColumnFamily, Options, DB as Rocksdb, WriteOptions, WriteBatch, SliceTransform};
 use std::{path::Path, sync::Arc};
 
 use crate::{server::value::Value, utils};
+
+
+const MAX_KEY_LEN :usize = 512;
 
 pub struct Shared {
     database: Rocksdb,
@@ -13,7 +16,8 @@ impl Shared {
         let path = Path::new(append_file);
         let mut opts = Options::default();
         opts.create_if_missing(true);
-        opts.create_missing_column_families(true);
+        let slice_transform = SliceTransform::create_fixed_prefix(MAX_KEY_LEN);
+        opts.set_prefix_extractor(slice_transform);
         let database = match Rocksdb::open(&opts, path) {
             Ok(some) => some,
             Err(err) => panic!("failed to initialize shared database,{}", err),
@@ -63,21 +67,6 @@ impl Shared {
         self.set(key, value, false)
     }
 
-    pub fn sets_set(&mut self, key: &str, values: Vec<Value>) -> crate::Result<()> {
-        let mut w = WriteBatch::default();
-        for value in values {
-            let value = value.as_slice();
-            let bound_column_family = self.get_column_family(key)?;
-            w.put_cf(&bound_column_family, value, b"");
-        }
-        self.set_with_sub_key_internal_batch(w)
-    }
-
-    pub fn hash_set(&mut self, key: &str, sub_key: &str, value: Value) -> crate::Result<()> {
-        let value = value.as_slice();
-        self.set_with_sub_key_internal(key, sub_key.as_bytes(), value)?;
-        Ok(())
-    }
 
     pub fn set(&mut self, key: &str, value: Value, nx: bool) -> crate::Result<Option<()>> {
         if (nx && self.is_exists(key)) || !nx {
@@ -89,6 +78,7 @@ impl Shared {
             return Ok(None);
         }
     }
+
 
     pub fn get(&self, key: &str) -> Option<Value> {
         match self.database.get(key.as_bytes()) {
@@ -131,6 +121,34 @@ impl Shared {
     }
 }
 
+//bound set operations
+impl Shared {
+
+    pub fn sets_set(&mut self, key: &str, values: Vec<Value>) -> crate::Result<()> {
+
+        if key.len() > MAX_KEY_LEN {
+            return Err(format!(" key length > the MAX_KEY_LEN {}",MAX_KEY_LEN).into());
+        }
+
+        todo!()
+    }
+
+    pub fn sets_iterator(&self,key :&str,skip :i32) -> crate::Result<Vec<Value>> {
+
+        todo!()
+    }
+
+
+}
+
+//bound hash operations {
+impl Shared {
+    
+    pub fn hash_set(&mut self, key: &str, sub_key: &str, value: Value) -> crate::Result<()> {
+        todo!()
+    }
+}
+
 //private method implementation
 impl Shared {
     
@@ -139,33 +157,6 @@ impl Shared {
         match self.database.write_opt(batch, &WriteOptions::default()) {
             Ok(()) => Ok(()),
             Err(err) => return Err(err.into()),
-        }
-    }
-
-
-    fn set_with_sub_key_internal(
-        &mut self,
-        key: &str,
-        sub_key: &[u8],
-        value: &[u8],
-    ) -> crate::Result<()> {
-        let column_family = self.get_column_family(key)?;
-        match self.database.put_cf(&column_family, sub_key, value) {
-            Ok(()) => Ok(()),
-            Err(err) => return Err(err.into()),
-        }
-    }
-
-    fn get_column_family(&self, key: &str) -> crate::Result<Arc<BoundColumnFamily>> {
-        match self.database.cf_handle(key) {
-            Some(col) => Ok(col),
-            None => match self.database.create_cf(key, &self.options) {
-                Ok(_) => match self.database.cf_handle(key) {
-                    Some(value) => Ok(value),
-                    None => return Err("Some errors occurred in get column family".into()),
-                },
-                Err(err) => return Err(err.into()),
-            },
         }
     }
 }

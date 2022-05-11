@@ -10,6 +10,7 @@ use crate::command::sadd::SAdd;
 use crate::command::scan::Scan;
 use crate::command::select::Select;
 use crate::command::set::Set;
+use crate::command::smembers::SMembers;
 use crate::command::strlen::StrLen;
 use crate::command::ttl::Ttl;
 use crate::command::Command;
@@ -57,6 +58,7 @@ impl Parse {
             "keys" => Command::KEYS(Keys::parse(self)?),
             "scan" => Command::SCAN(Scan::parse(self)?),
             "sadd" => Command::SADD(SAdd::parse(self)?),
+            "smembers" => Command::SMEMBERS(SMembers::parse(self)?),
             _ => Command::UNKNOWN(command_name, self),
         };
         Ok(cmd)

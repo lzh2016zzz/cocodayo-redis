@@ -16,6 +16,7 @@ use self::incrby::IncrBy;
 use self::keys::Keys;
 use self::sadd::SAdd;
 use self::scan::Scan;
+use self::smembers::SMembers;
 use self::ttl::Ttl;
 
 
@@ -35,6 +36,7 @@ pub mod mset;
 pub mod keys;
 pub mod scan;
 pub mod sadd;
+pub mod smembers;
 
 
 #[derive(Debug)]
@@ -57,6 +59,7 @@ pub enum Command {
     KEYS(Keys),
     SCAN(Scan),
     SADD(SAdd),
+    SMEMBERS(SMembers),
 }
 
 impl Command {
@@ -81,6 +84,7 @@ impl Command {
             Command::KEYS(keys) => keys.apply(shared),
             Command::SCAN(scan) => scan.apply(shared),
             Command::SADD(sadd) => sadd.apply(shared),
+            Command::SMEMBERS(smembers) => smembers.apply(shared),
         };
 
         return match result{
