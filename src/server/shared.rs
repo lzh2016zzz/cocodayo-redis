@@ -1,10 +1,9 @@
-use rocksdb::{BoundColumnFamily, Options, DB as Rocksdb, WriteOptions, WriteBatch, SliceTransform};
-use std::{path::Path, sync::Arc};
+use rocksdb::{Options, DB as Rocksdb, WriteOptions, WriteBatch, SliceTransform, ReadOptions};
+use std::{path::Path};
 
 use crate::{server::value::Value, utils};
 
 
-const MAX_KEY_LEN :usize = 512;
 
 pub struct Shared {
     database: Rocksdb,
@@ -16,7 +15,7 @@ impl Shared {
         let path = Path::new(append_file);
         let mut opts = Options::default();
         opts.create_if_missing(true);
-        let slice_transform = SliceTransform::create_fixed_prefix(MAX_KEY_LEN);
+        let slice_transform = SliceTransform::create_noop();
         opts.set_prefix_extractor(slice_transform);
         let database = match Rocksdb::open(&opts, path) {
             Ok(some) => some,
@@ -126,15 +125,17 @@ impl Shared {
 
     pub fn sets_set(&mut self, key: &str, values: Vec<Value>) -> crate::Result<()> {
 
-        if key.len() > MAX_KEY_LEN {
-            return Err(format!(" key length > the MAX_KEY_LEN {}",MAX_KEY_LEN).into());
-        }
 
         todo!()
     }
 
     pub fn sets_iterator(&self,key :&str,skip :i32) -> crate::Result<Vec<Value>> {
 
+        todo!()
+    }
+
+    pub fn sets_get(&self, key :&str) -> Option<Value> {
+        let opt = ReadOptions::default();
         todo!()
     }
 
